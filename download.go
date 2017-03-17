@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"mime"
 )
 
 const (
@@ -37,24 +38,36 @@ func New() Downloader {
 	return Downloader{}
 }
 
-func (dl *Downloader) Init(url string, conns int, filename string) (uint64, error) {
+func (dl *Downloader) Init(url string, conns int, filename string) (uint64, string, error) {
 	dl.url = url
 	dl.conns = conns
 	dl.status = NotStarted
 	resp, err := http.Head(url)
 	if err != nil {
-		return 0, err
+		return 0, filename, err
 	}
 	if resp.StatusCode != 200 {
-		return 0, errors.New(resp.Status)
+		return 0, filename, errors.New(resp.Status)
 	}
 
 	dl.size, err = strconv.Atoi(resp.Header.Get("Content-Length"))
 
 	if err != nil {
-		return 0, errors.New("Not supported for download")
+		return 0, filename, errors.New("Not supported for download")
 	}
 
+	if filename == "" {
+		_, params, err := mime.ParseMediaType(resp.Header.Get("Content-Disposition"))
+		if err != nil {
+			return 0, filename, fmt.Errorf("error: missing 'Content-Disposition' in response headers") 
+		}
+		var ok bool
+		filename, ok = params["filename"]
+		if !ok {
+			return 0, filename, fmt.Errorf("error: could not parse filename from response headers")
+		}
+	}
+	
 	_, err = os.Stat(filename)
 	if os.IsExist(err) {
 		os.Remove(filename)
@@ -62,7 +75,7 @@ func (dl *Downloader) Init(url string, conns int, filename string) (uint64, erro
 
 	dl.file, err = os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
-		return 0, err
+		return 0, filename, err
 	}
 
 	dl.parts = make([]Part, dl.conns)
@@ -84,7 +97,7 @@ func (dl *Downloader) Init(url string, conns int, filename string) (uint64, erro
 		dl.parts[i] = part
 	}
 
-	return uint64(dl.size), nil
+	return uint64(dl.size), filename, nil
 }
 
 func (dl *Downloader) StartDownload() {
@@ -159,7 +172,7 @@ func (part *Part) Download(done chan error, quit chan bool) error {
 	}
 	defer resp.Body.Close()
 
-	for {
+	for err != io.EOF {
 		select {
 		case <-quit:
 			return nil
@@ -167,10 +180,8 @@ func (part *Part) Download(done chan error, quit chan bool) error {
 		}
 
 		nbytes, err := resp.Body.Read(buffer[0:size])
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
+
+		if err != nil && err != io.EOF {
 			return err
 		}
 
