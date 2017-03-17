@@ -33,10 +33,10 @@ func main() {
 
 	var url = flag.String("u", "", "Download file url")
 	var conns = flag.Int("c", 1, "Number of connections")
-	var outfile = flag.String("o", "", "Output filename")
+	var outfile = flag.String("o", "", "Optional output filename")
 	flag.Parse()
 
-	if *outfile == "" || *url == "" {
+	if *url == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
