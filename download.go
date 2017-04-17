@@ -32,17 +32,29 @@ type Downloader struct {
 	done   chan error
 	quit   chan bool
 	status string
+	headers map[string]string
 }
 
 func New() Downloader {
 	return Downloader{}
 }
 
+func (dl *Downloader) SetHeaders(headers map[string]string) {
+	dl.headers = headers 
+}
+
 func (dl *Downloader) Init(url string, conns int, filename string) (uint64, string, error) {
 	dl.url = url
 	dl.conns = conns
 	dl.status = NotStarted
-	resp, err := http.Head(url)
+	req, err := http.NewRequest("HEAD", url, nil)
+	if err != nil {panic(err)}	
+	if dl.headers != nil {
+		for k, v := range dl.headers {
+			req.Header.Set(k,v)
+		}
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return 0, filename, err
 	}
