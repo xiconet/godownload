@@ -8,7 +8,7 @@ This fork fixes a file corruption issue
     $ cd cmd
     $ go get github.com/xiconet/godownload
     $ make
-    $ ./downloader -c=5 -o=outputfile -u=http://releases.ubuntu.com/precise/ubuntu-12.04.1-alternate-amd64.iso
+    $ ./downloader -c 5 -o outputfile http://releases.ubuntu.com/precise/ubuntu-12.04.1-alternate-amd64.iso
     File size is 734MB
     Downloaded 0.23% of 734MB, at 121KB/s
 
