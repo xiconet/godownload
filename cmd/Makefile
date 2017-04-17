@@ -1,6 +1,6 @@
 
 target:
-	go build -o downloader
+	go build -o downloader.exe
 
 clean:
-	rm -f downloader
+	rm -f downloader.exe
