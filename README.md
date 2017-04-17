@@ -1,7 +1,7 @@
 # Parallel Downloader
 
-A simple parallel downloader package written in go
-This fork fixes a file corruption issue 
+A simple parallel downloader package written in go. 
+This fork fixes a file corruption issue and adds an option to set custom headers.
 
 
 ## Usage example
